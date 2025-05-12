@@ -1,13 +1,14 @@
 use crate::pixel_struct::Pixel;
-use image::{imageops::FilterType, open, GenericImageView};
+use image::{imageops::FilterType, open, DynamicImage, GenericImageView};
 use std::io::Write;
 
-pub fn scale_img(path: &str, scale: u32) -> Vec<Pixel> {
+pub fn scale_img(path: &str, scale: u32, constrast_factor: f32) -> Vec<Pixel> {
     let img = open(path).expect("Failed to load image");
     let (width, height) = img.dimensions();
 
-    let img_resize = img.resize(width / scale, height / scale, FilterType::Nearest);
-    let img_resize = img_resize.grayscale();
+    let img_gray = img.grayscale();
+    let img_constrasted = increase_contrast(&img_gray, constrast_factor);
+    let img_resize = img_constrasted.resize(width / scale, height / scale, FilterType::Nearest);
 
     let mut pixels: Vec<Pixel> = Vec::new();
 
@@ -16,6 +17,21 @@ pub fn scale_img(path: &str, scale: u32) -> Vec<Pixel> {
     }
 
     pixels
+}
+
+fn increase_contrast(img: &DynamicImage, factor: f32) -> DynamicImage {
+    let gray_image = img.to_luma8();
+    let (width, height) = gray_image.dimensions();
+
+    let contrasted = image::GrayImage::from_fn(width, height, |x, y| {
+        let pixel = gray_image.get_pixel(x, y)[0];
+        let centered = pixel as f32 - 128.0;
+        let adjusted = (centered * factor).clamp(-128.0, 127.0);
+        let new_pixel = (adjusted + 128.0).round().clamp(0.0, 255.0) as u8;
+        image::Luma([new_pixel])
+    });
+
+    DynamicImage::ImageLuma8(contrasted)
 }
 
 fn twice<F: FnMut()>(mut f: F) {
