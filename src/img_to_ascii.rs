@@ -1,6 +1,6 @@
-use std::io::Write;
 use crate::pixel_struct::Pixel;
-use image::{open, GenericImageView, imageops::FilterType};
+use image::{imageops::FilterType, open, GenericImageView};
+use std::io::Write;
 
 pub fn scale_img(path: &str, scale: u32) -> Vec<Pixel> {
     let img = open(path).expect("Failed to load image");
@@ -19,7 +19,7 @@ pub fn scale_img(path: &str, scale: u32) -> Vec<Pixel> {
 }
 
 fn twice<F: FnMut()>(mut f: F) {
-    for _ in 0..3 {
+    for _ in 0..4 {
         f();
     }
 }
